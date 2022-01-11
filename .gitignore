@@ -1,4 +1,4 @@
-__pycache__/
-__private/
-config.ini
 *.js
+__private/
+__pycache__/
+config.ini

@@ -1,8 +1,8 @@
 # Save this file as config.ini and uncomment any lines you wish to change
-# 
+#
 # Entries in COLOURS and STATE_COLOURS should be ECMA-48 Select Graphic Rendition codes, delimited by ';'
 #   Helpful list: https://i.stack.imgur.com/6otvY.png
-# 
+#
 # Section and option names are case-sensitive. Section headers should always be uncommented
 
 [COLOURS]

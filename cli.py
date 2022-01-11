@@ -11,7 +11,8 @@ try:
 except ImportError:
     pass
 
-from wordle import LetterStates, Game
+from wordle import Game, LetterStates
+
 
 class CLIConfig:
     RESET = "\x1b[0m"
@@ -22,25 +23,25 @@ class CLIConfig:
     HI = "\x1b[1m"
     DIM = "\x1b[90m"
     STATE_COLOURS = {
-        LetterStates.CORRECTPOSITION:    "\x1b[42;30m",
-        LetterStates.INCORRECTPOSITION:  "\x1b[43;30m",
-        LetterStates.NOTPRESENT:         "\x1b[40;37m",
-        LetterStates.NOTGUESSEDYET:      "\x1b[90m"
-        }
+        LetterStates.CORRECTPOSITION: "\x1b[42;30m",
+        LetterStates.INCORRECTPOSITION: "\x1b[43;30m",
+        LetterStates.NOTPRESENT: "\x1b[40;37m",
+        LetterStates.NOTGUESSEDYET: "\x1b[90m",
+    }
     SHARE_EMOJI = {
-        LetterStates.CORRECTPOSITION:    "🟩",
-        LetterStates.INCORRECTPOSITION:  "🟨",
-        LetterStates.NOTPRESENT:         "⬛"
-        }
+        LetterStates.CORRECTPOSITION: "🟩",
+        LetterStates.INCORRECTPOSITION: "🟨",
+        LetterStates.NOTPRESENT: "⬛",
+    }
     WIN_MESSAGES = {
         1: "🤯 GENIUS",
         2: "🧠 MAGNIFICENT",
         3: "🔥 IMPRESSIVE",
         4: "🏆 SPLENDID",
         5: "🏅 GREAT",
-        6: "👍 NICE"
-        }
-    
+        6: "👍 NICE",
+    }
+
     # create new CLIConfig, loop through attributes and override values from config
     @staticmethod
     def from_ini(config_file="config.ini"):
@@ -54,15 +55,18 @@ class CLIConfig:
             elif isinstance(getattr(c, attr), dict) and parser.has_section(attr):
                 for key in getattr(c, attr):
                     if parser.has_option(attr, str(key)):
-                        getattr(c, attr)[key] = ("\x1b[{v}m" if attr == "STATE_COLOURS" else "{v}").format(v=parser.get(attr, str(key)))
+                        getattr(c, attr)[key] = (
+                            "\x1b[{v}m" if attr == "STATE_COLOURS" else "{v}"
+                        ).format(v=parser.get(attr, str(key)))
             elif parser.has_option("COLOURS", attr):
                 setattr(c, attr, "\x1b[{v}m".format(v=parser.get("COLOURS", attr)))
         return c
 
+
 class CLIPlayer:
     ASSUME_GUESSES_VALID = False
     GAME_NUMBER = None
-    _C : CLIConfig
+    _C: CLIConfig
 
     def __init__(self):
         self._lines_since_hint = -1
@@ -77,7 +81,9 @@ class CLIPlayer:
     def start(self):
         self._lines_since_hint = -1
         self._response_history = []
-        self._hint_status = {letter: LetterStates.NOTGUESSEDYET for letter in string.ascii_uppercase}
+        self._hint_status = {
+            letter: LetterStates.NOTGUESSEDYET for letter in string.ascii_uppercase
+        }
 
         self.out(f"Let's play a game of Wordle")
         self.update_hint()
@@ -85,7 +91,9 @@ class CLIPlayer:
     def guess(self, round) -> str:
         prompt = f"Guess { round }/{ Game.ROUNDS}: "
         guess = input(prompt).upper()
-        sys.stdout.write(f"\033[A\033[{len(prompt)}C\033[K") # move cursor up one line, right by len(prompt), then clear rest of line
+        sys.stdout.write(
+            f"\033[A\033[{len(prompt)}C\033[K"
+        )  # move cursor up one line, right by len(prompt), then clear rest of line
         return guess
 
     def handle_response(self, guess: str, states: list[LetterStates]):
@@ -101,9 +109,13 @@ class CLIPlayer:
         self.out(f"{ self._C.WARN }{ warning }")
 
     def handle_win(self, round, game_identifier=None):
-        self.out(f"{ self._C.WIN }{ self._C.WIN_MESSAGES[round] }! Got it in { round }/{ Game.ROUNDS } rounds")
-        
-        share_text = "wordle-cli {n}{r}/{R}\n".format(n=f"{game_identifier} " if game_identifier else "", r=round, R=Game.ROUNDS)
+        self.out(
+            f"{ self._C.WIN }{ self._C.WIN_MESSAGES[round] }! Got it in { round }/{ Game.ROUNDS } rounds"
+        )
+
+        share_text = "wordle-cli {n}{r}/{R}\n".format(
+            n=f"{game_identifier} " if game_identifier else "", r=round, R=Game.ROUNDS
+        )
         for _, states in self._response_history:
             share_text += "\n" + "".join(self._C.SHARE_EMOJI[state] for state in states)
 
@@ -120,7 +132,9 @@ class CLIPlayer:
         self.out(f"{ self._C.LOSE }QUIT!")
 
     def again(self) -> str:
-        return input(f"Play again { self._C.DIM }[Enter]{ self._C.RESET } or exit { self._C.DIM }[Ctrl-C]{ self._C.RESET }? ")
+        return input(
+            f"Play again { self._C.DIM }[Enter]{ self._C.RESET } or exit { self._C.DIM }[Ctrl-C]{ self._C.RESET }? "
+        )
 
     def out(self, string=""):
         # print non-breaking space to avoid glitching on terminal resize
@@ -130,32 +144,53 @@ class CLIPlayer:
 
     def update_hint(self):
         if self._lines_since_hint >= 1:
-            sys.stdout.write(f"\033[{self._lines_since_hint}F") # move cursor up to hint line
-        sys.stdout.write(self.pretty_response(list(self._hint_status.keys()), list(self._hint_status.values()), self._C)+"\xA0")
+            sys.stdout.write(
+                f"\033[{self._lines_since_hint}F"
+            )  # move cursor up to hint line
+        sys.stdout.write(
+            self.pretty_response(
+                list(self._hint_status.keys()),
+                list(self._hint_status.values()),
+                self._C,
+            )
+            + "\xA0"
+        )
         if self._lines_since_hint >= 1:
-            sys.stdout.write(f"\033[{self._lines_since_hint}E") # move cursor back down
+            sys.stdout.write(f"\033[{self._lines_since_hint}E")  # move cursor back down
         elif self._lines_since_hint == -1:
             sys.stdout.write("\n")
             self._lines_since_hint = 1
-  
+
     # static method for use by other Player types
     @staticmethod
     def pretty_response(word, states, config: CLIConfig) -> str:
-        return "".join(f"{ config.STATE_COLOURS[state] }{ letter }{ config.RESET }" for letter, state in zip(word, states))
+        return "".join(
+            f"{ config.STATE_COLOURS[state] }{ letter }{ config.RESET }"
+            for letter, state in zip(word, states)
+        )
 
     @staticmethod
     def try_clipboard(text) -> bool:
         try:
-            if hasattr(platform.uname(), "release") and "microsoft-standard" in platform.uname().release:
-                clip = shutil.which("clip.exe") # WSL
+            if (
+                hasattr(platform.uname(), "release")
+                and "microsoft-standard" in platform.uname().release
+            ):
+                clip = shutil.which("clip.exe")  # WSL
             elif platform.system() == "Linux":
-                clip = shutil.which("xclip") # untested!
+                clip = shutil.which("xclip")  # untested!
             elif platform.system() == "Darwin":
-                clip = shutil.which("pbcopy") # untested!
+                clip = shutil.which("pbcopy")  # untested!
             if clip == None:
                 return False
-            p = subprocess.Popen(clip, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, env={'LANG': 'en_US.UTF-8'})
-            p.communicate(input=text.encode('utf-8'))
+            p = subprocess.Popen(
+                clip,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+                env={"LANG": "en_US.UTF-8"},
+            )
+            p.communicate(input=text.encode("utf-8"))
             return p.returncode == 0
         except:
             return False

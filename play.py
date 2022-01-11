@@ -4,10 +4,10 @@ import sys
 import wordle
 from cli import CLIPlayer
 
-if __name__=="__main__":
+if __name__ == "__main__":
     game = wordle.Game()
     player = CLIPlayer()
-    
+
     today_solution = False
     forced_solution = None
     if len(sys.argv) > 1:
@@ -30,14 +30,16 @@ if __name__=="__main__":
 
     while True:
         try:
-            game.play(player, forced_solution=forced_solution, today_solution=today_solution)
+            game.play(
+                player, forced_solution=forced_solution, today_solution=today_solution
+            )
         except (KeyboardInterrupt, EOFError):
             print()
             player.quit()
-        
+
         if forced_solution or today_solution:
             exit()
-            
+
         try:
             player.again()
             print()
